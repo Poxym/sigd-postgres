@@ -36,8 +36,21 @@ El adaptador conserva columnas nativas de PostgreSQL y parametriza sus consultas
 
 Los documentos conservan JSONB para su contenido congelado y, a la vez, proyecciones relacionales de secciones, registros y valores. La proyección se actualiza en la misma transacción. Las lecturas históricas usan la instantánea congelada.
 
-## Estado de validación
+## Estado de validación (23/11/2026)
 
-Las pruebas del dominio compartido y de persistencia SQLite fueron ejecutadas en el espacio de trabajo. La migración y el adaptador PostgreSQL no pudieron ejecutarse allí: Docker estaba apagado y no había servidor PostgreSQL conectado. `test:provider` comprueba el adaptador cuando la base está disponible. No se presenta esta limitación como una prueba aprobada.
+Ejecutado contra PostgreSQL 17 (`postgres:17-alpine` en Docker), base vacía:
 
-El modelo y sus fuentes editables están en `modelo/`. Las reglas de 40 horas, semanas efectivas y umbral de reprobación se parametrizan; los ejemplos requieren ratificación institucional.
+| Comprobación | Resultado |
+|---|---|
+| `npm run migrate` sobre base vacía, y una segunda vez | aplica `001_schema.sql`; la segunda vez no repite |
+| Tablas y FK creadas | 58 tablas, 90 FOREIGN KEY |
+| FK huérfana y `code` duplicado | rechazados por la base |
+| `UPDATE`/`DELETE` sobre `document_versions` | rechazados por el disparador `immutable_row()` |
+| `npm test` (dominio compartido) | 26/26 |
+| `npm run test:provider` | 1/1 |
+| `npm run seed`, `npm run check`, `/api/health` | correcto |
+| Recorrido completo en navegador con `sigd-sistema` sobre esta base (plan, envío, aprobación, informe, evidencia, Administración, Reportes) | 11/11 pasos; en la base quedan plan aprobado, informe en borrador, 2 versiones y 1 evidencia |
+
+No se probaron carga concurrente de 114 usuarios ni un servidor gestionado en la nube.
+
+El modelo y sus fuentes editables están en `modelo/`; el diagrama relacional oficial es `modelo/diagrama_relacional/SIGD_Diagrama_Relacional.pdf`. Semanas efectivas, carga nominal, máximo semanal y umbral de reprobación se configuran por periodo. Por acuerdo del equipo (22/11) el periodo semilla aplica 40 h semanales como máximo obligatorio al enviar el plan; el resto de valores son ejemplos que requieren ratificación institucional.
